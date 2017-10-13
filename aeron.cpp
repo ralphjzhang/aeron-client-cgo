@@ -12,10 +12,22 @@ std::shared_ptr<Aeron> g_aeron;
 std::mutex g_publications_lock;
 std::array<std::shared_ptr<Publication>, 16> g_publications;
 
-void aeron_initialize(char *aeron_dir) {
-    aeron::Context context;
-    context.aeronDir(aeron_dir);
-    g_aeron = Aeron::connect(context);
+int aeron_initialize(char *aeron_dir) {
+    try {
+        aeron::Context context;
+        context.aeronDir(aeron_dir);
+        g_aeron = Aeron::connect(context);
+        return 0;
+    } catch (std::exception const& e) {
+        std::cerr << "aeron_initialize: exception - " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "aeron_initialize: unknown exception" << std::endl;
+    }
+    return -1;
+}
+
+void aeron_destroy() {
+    g_aeron.reset();
 }
 
 // return: publication index
@@ -36,6 +48,10 @@ int aeron_add_publication(char *channel, int stream_id) {
         }
     }
     return -1;
+}
+
+void aeron_remove_publication(int publication_idx) {
+    g_publications[publication_idx].reset();
 }
 
 void aeron_publish(int publication_idx, char* msg, int msg_len) {
