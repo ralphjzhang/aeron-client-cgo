@@ -19,7 +19,7 @@ void aeron_initialize(char *aeron_dir) {
 }
 
 // return: publication index
-int64_t aeron_add_publication(char *channel, int32_t stream_id) {
+int aeron_add_publication(char *channel, int stream_id) {
     auto id = g_aeron->addPublication(channel, stream_id);
     auto p = g_aeron->findPublication(id);
     while (!p) {
@@ -38,7 +38,7 @@ int64_t aeron_add_publication(char *channel, int32_t stream_id) {
     return -1;
 }
 
-void aeron_publish(int64_t publication_idx, char* msg, int msg_len) {
+void aeron_publish(int publication_idx, char* msg, int msg_len) {
     std::array<uint8_t, 256> buffer __attribute__((aligned(16)));
     concurrent::AtomicBuffer srcBuffer(&buffer[0], buffer.size());
     srcBuffer.putBytes(0, reinterpret_cast<uint8_t*>(msg), msg_len);

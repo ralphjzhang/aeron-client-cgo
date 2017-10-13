@@ -6,9 +6,9 @@ extern "C" {
 
 void aeron_initialize(char *aeron_dir);
 
-int64_t aeron_add_publication(char *channel, int32_t stream_id);
+int aeron_add_publication(char *channel, int stream_id);
 
-void aeron_publish(int64_t publication_idx, char* msg, int msg_len);
+void aeron_publish(int publication_idx, char* msg, int msg_len);
 
 #ifdef __cplusplus
 }
