@@ -34,7 +34,6 @@ Publication::Publication(
     m_channel(channel),
     m_registrationId(registrationId),
     m_originalRegistrationId(originalRegistrationId),
-    m_maxPossiblePosition(buffers->atomicBuffer(0).capacity() * (1L << 31L)),
     m_streamId(streamId),
     m_sessionId(sessionId),
     m_initialTermId(LogBufferDescriptor::initialTermId(m_logMetaDataBuffer)),
@@ -62,6 +61,11 @@ Publication::Publication(
 Publication::~Publication()
 {
     m_conductor.releasePublication(m_registrationId);
+}
+
+bool Publication::isPublicationConnected(std::int64_t timeOfLastStatusMessage) const
+{
+    return m_conductor.isPublicationConnected(timeOfLastStatusMessage);
 }
 
 void Publication::addDestination(const std::string& endpointChannel)

@@ -74,6 +74,10 @@ void aeron_remove_publication(int publication_idx) {
     g_publications[publication_idx].reset();
 }
 
+int aeron_get_streamId(int publication_idx) {
+    return g_publications[publication_idx]->streamId();
+}
+
 int aeron_add_subscription(char *channel, int stream_id) {
     std::cout << "subing: " << std::endl;
     auto id = g_aeron->addSubscription(channel, stream_id);

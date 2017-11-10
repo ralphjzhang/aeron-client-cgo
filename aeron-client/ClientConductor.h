@@ -56,7 +56,8 @@ public:
         const exception_handler_t& errorHandler,
         long driverTimeoutMs,
         long resourceLingerTimeoutMs,
-        long long interServiceTimeoutNs) :
+        long long interServiceTimeoutNs,
+        long publicationConnectionTimeoutMs) :
         m_driverProxy(driverProxy),
         m_driverListenerAdapter(broadcastReceiver, *this),
         m_counterValuesBuffer(counterValuesBuffer),
@@ -70,6 +71,7 @@ public:
         m_driverTimeoutMs(driverTimeoutMs),
         m_resourceLingerTimeoutMs(resourceLingerTimeoutMs),
         m_interServiceTimeoutMs(static_cast<long>(interServiceTimeoutNs / 1000000)),
+        m_publicationConnectionTimeoutMs(publicationConnectionTimeoutMs),
         m_driverActive(true)
     {
     }
@@ -147,6 +149,11 @@ public:
         std::int64_t correlationId);
 
     void onInterServiceTimeout(long long now);
+
+    inline bool isPublicationConnected(std::int64_t timeOfLastStatusMessage) const
+    {
+        return (m_epochClock() <= (timeOfLastStatusMessage + m_publicationConnectionTimeoutMs));
+    }
 
     void addDestination(std::int64_t publicationRegistrationId, const std::string& endpointChannel);
     void removeDestination(std::int64_t publicationRegistrationId, const std::string& endpointChannel);
@@ -286,6 +293,7 @@ private:
     long m_driverTimeoutMs;
     long m_resourceLingerTimeoutMs;
     long m_interServiceTimeoutMs;
+    long m_publicationConnectionTimeoutMs;
 
     std::atomic<bool> m_driverActive;
 

@@ -54,6 +54,11 @@ public:
         return *m_tailAddr;
     }
 
+    inline void tailTermId(const std::int32_t termId)
+    {
+        *m_tailAddr = static_cast<std::int64_t>(termId) << 32;
+    }
+
     inline std::int32_t claim(
         std::int32_t termId,
         std::int32_t termOffset,
@@ -202,7 +207,7 @@ private:
             FrameDescriptor::frameLengthOrdered(termBuffer, termOffset, paddingLength);
         }
 
-        return TERM_APPENDER_FAILED;
+        return TERM_APPENDER_TRIPPED;
     }
 
     inline void putRawTailOrdered(const std::int64_t termId, const std::int32_t termOffset)

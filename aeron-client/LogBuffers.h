@@ -32,8 +32,8 @@ using namespace aeron::concurrent::logbuffer;
 class LogBuffers
 {
 public:
-    explicit LogBuffers(const char *filename);
-    LogBuffers(std::uint8_t *address, std::int64_t logLength, std::int32_t termLength);
+    LogBuffers(const char *filename);
+    LogBuffers(std::uint8_t *address, index_t length);
 
     virtual ~LogBuffers();
 
@@ -43,7 +43,7 @@ public:
     }
 
 private:
-    MemoryMappedFile::ptr_t m_memoryMappedFiles;
+    std::vector<MemoryMappedFile::ptr_t> m_memoryMappedFiles;
     AtomicBuffer m_buffers[LogBufferDescriptor::PARTITION_COUNT + 1];
 };
 
