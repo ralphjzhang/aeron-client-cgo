@@ -13,8 +13,10 @@ int aeron_get_streamId(int publication_idx);
 
 int aeron_add_subscription(char *channel, int stream_id);
 
+typedef int (*frag_handler_t)(unsigned char*, int);
+
 void aeron_publish(int publication_idx, char* msg, int msg_len);
-void aeron_poll(int subscription_idx);
+void aeron_poll(int subscription_idx, frag_handler_t frag_handler);
 
 #ifdef __cplusplus
 }

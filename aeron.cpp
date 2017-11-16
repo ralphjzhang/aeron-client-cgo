@@ -8,16 +8,18 @@ using namespace aeron::util;
 using namespace aeron;
 
 // to simplify, we use a fixed size array for publications, and let client use index
-// since publication is potentially expensive, 16 publication should be enough
+// since publication is potentially expensive, 128 publication should be enough
+aeron::Context context;
 std::shared_ptr<Aeron> g_aeron;
 std::mutex g_publications_lock;
 std::array<std::shared_ptr<Publication>, 128> g_publications;
 std::mutex g_subscriptions_lock;
-std::array<std::shared_ptr<Subscription>, 16> g_subscriptions;
+std::array<std::string, 128> g_sub_chans;
+std::array<std::shared_ptr<Subscription>, 128> g_subscriptions;
+std::array<std::thread, 128> g_poll_threads;
 
 int aeron_initialize(char *aeron_dir) {
     try {
-        aeron::Context context;
         context.aeronDir(aeron_dir);
         context.newSubscriptionHandler(
             [](const std::string& channel, std::int32_t streamId, std::int64_t correlationId) {
@@ -79,10 +81,8 @@ int aeron_get_streamId(int publication_idx) {
 }
 
 int aeron_add_subscription(char *channel, int stream_id) {
-    std::cout << "subing: " << std::endl;
-    auto id = g_aeron->addSubscription(channel, stream_id);
-    std::cout << "sub: " << id << std::endl;
-    auto s = g_aeron->findSubscription(id);
+    int64_t id = g_aeron->addSubscription(channel, stream_id);
+    std::shared_ptr<Subscription> s = g_aeron->findSubscription(id);
     while (!s) {
         std::this_thread::yield();
         s = g_aeron->findSubscription(id);
@@ -108,13 +108,19 @@ void aeron_publish(int publication_idx, char* msg, int msg_len) {
     g_publications[publication_idx]->offer(srcBuffer, 0, msg_len);
 }
 
-void aeron_poll(int subscription_idx) {
-    auto handler = [](const AtomicBuffer& buffer, util::index_t offset, util::index_t length, const Header& header) {
-        std::cout << "Message to stream " << header.streamId() << " from session " << header.sessionId();
-        std::cout << std::string(reinterpret_cast<const char*>(buffer.buffer()) + offset, static_cast<std::size_t>(length)) << std::endl;
-    };
-    SleepingIdleStrategy idle(std::chrono::milliseconds(1));
+void aeron_poll(int subscription_idx, frag_handler_t frag_handler) {
+    g_poll_threads[subscription_idx] = std::thread([=]() {
+        auto handler = [frag_handler](const AtomicBuffer& buffer, util::index_t offset, util::index_t length, const Header& header) {
+            // std::cout << "Message to stream " << header.streamId() << " from session " << header.sessionId();
+            // std::cout << std::string(reinterpret_cast<const char*>(buffer.buffer()) + offset, static_cast<std::size_t>(length)) << std::endl;
+            frag_handler(buffer.buffer() + offset, length);
+        };
+        SleepingIdleStrategy idle(std::chrono::milliseconds(1));
 
-    const int fragments_read = g_subscriptions[subscription_idx]->poll(handler, 10);
-    idle.idle(fragments_read);
+        while (true)
+        {
+            const int fragments_read = g_subscriptions[subscription_idx]->poll(handler, 10);
+            idle.idle(fragments_read);
+        }
+    });
 }
