@@ -9,13 +9,16 @@ using namespace aeron::util;
 using namespace aeron;
 
 // to simplify, we use a fixed size array for publications, and let client use index
-// since publication is potentially expensive, 128 publication should be enough
+// since publication is potentially expensive, 64 publication should be enough
 aeron::Context context;
 std::shared_ptr<Aeron> g_aeron;
+
 std::mutex g_publications_lock;
-std::array<std::shared_ptr<Publication>, 128> g_publications;
-std::shared_ptr<Subscription> g_subscription;
-std::thread g_poll_thread;
+std::array<std::shared_ptr<Publication>, 64> g_publications;
+
+std::mutex g_subscriptions_lock;
+std::array<std::shared_ptr<Subscription>, 8> g_subscriptions;
+std::array<std::thread, 8> g_sub_threads;
 
 int aeron_initialize(char *aeron_dir) {
     try {
@@ -79,40 +82,54 @@ int aeron_get_streamId(int publication_idx) {
     return g_publications[publication_idx]->streamId();
 }
 
-void aeron_publish(int publication_idx, char* msg, int msg_len) {
+int64_t aeron_publish(int publication_idx, char* msg, int msg_len) {
     std::array<uint8_t, 256> buffer __attribute__((aligned(16)));
-    concurrent::AtomicBuffer srcBuffer(&buffer[0], buffer.size());
+    concurrent::AtomicBuffer srcBuffer(&buffer[0], msg_len);
     srcBuffer.putBytes(0, reinterpret_cast<uint8_t*>(msg), msg_len);
 
     // no locks needed here, since g_publications is fixed sized
-    g_publications[publication_idx]->offer(srcBuffer, 0, msg_len);
+    auto pub = g_publications[publication_idx];
+    auto ret = pub->offer(srcBuffer, 0, msg_len);
+    return ret;
 }
 
-extern int AeronPollCallback(unsigned char* buf, int len);
-
-void aeron_poll(char *channel, int stream_id) {
-    if (!g_subscription) {
-        int64_t id = g_aeron->addSubscription(channel, stream_id);
-        g_subscription = g_aeron->findSubscription(id);
-        while (!g_subscription) {
-            std::this_thread::yield();
-            g_subscription = g_aeron->findSubscription(id);
+int aeron_add_subscription(char *channel, int stream_id) {
+    auto id = g_aeron->addSubscription(channel, stream_id);
+    auto s = g_aeron->findSubscription(id);
+    while (!s) {
+        std::this_thread::yield();
+        s = g_aeron->findSubscription(id);
+    }
+    {
+        std::lock_guard<std::mutex> _(g_subscriptions_lock);
+        for (size_t i = 0; i < g_subscriptions.size(); ++i) {
+            if (!g_subscriptions[i]) {
+                g_subscriptions[i] = s;
+                return i;
+            }
         }
     }
+    return -1;
+}
 
-    g_poll_thread = std::thread([=]() {
-        auto handler = [](const AtomicBuffer& buffer, util::index_t offset, util::index_t length, const Header& header) {
+int aeron_poll(int subscription_idx, poll_handler_t handler) {
+    auto sub = g_subscriptions[subscription_idx];
+    if (!sub) return -1;
+
+    g_sub_threads[subscription_idx] = std::thread([sub, handler]() {
+        auto frag_handler = [handler](const AtomicBuffer& buffer, util::index_t offset, util::index_t length, const Header& header) {
             //std::cout << "Message to stream " << header.streamId() << " from session " << header.sessionId();
             //std::cout << std::string(reinterpret_cast<const char*>(buffer.buffer()) + offset, static_cast<std::size_t>(length)) << std::endl;
-            AeronPollCallback(buffer.buffer() + offset, length);
+            handler((char*)(buffer.buffer() + offset), length);
         };
 
         // SleepingIdleStrategy idle(std::chrono::milliseconds(1));
         concurrent::BusySpinIdleStrategy idle;
         while (true)
         {
-            const int fragments_read = g_subscription->poll(handler, 10);
+            const int fragments_read = sub->poll(frag_handler, 10);
             idle.idle(fragments_read);
         }
     });
+    return 0;
 }

@@ -6,18 +6,19 @@
 
 using namespace aeron;
 
-int AeronPollCallback(unsigned char* buf, int len) {
-    std::cout << "AeronPollCallback: " << std::string{(char *)buf, len} << std::endl;
+int poll_callback(char* buf, int len) {
+    std::cout << "AeronPollCallback: " << std::string{buf, size_t(len)} << std::endl;
+    return 0;
 }
 
 int main(int argc, char **argv) {
-    int ret = aeron_initialize((char*)"/opt/yi/data/aeron/quas");
+    int ret = aeron_initialize((char*)"/opt/yi/data/aeron");
     if (ret < 0)
         return -1;
 
     std::cout << "inited" << std::endl;
     if (argv[1] == std::string("pub")) {
-        auto pub_idx = aeron_add_publication(argv[2], 1);
+        auto pub_idx = aeron_add_publication(argv[2], atoi(argv[3]));
         for (int i = 0; i < 100000; ++i) {
             char buf[32];
             sprintf(buf, "pub: %d", i);
@@ -26,7 +27,8 @@ int main(int argc, char **argv) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     } else {
-        aeron_poll(argv[2], 1);
+        auto sub_idx = aeron_add_subscription(argv[2], atoi(argv[3]));
+        aeron_poll(sub_idx, poll_callback);
         std::cout << "polling......." << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(100));
     }
