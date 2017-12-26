@@ -23,7 +23,7 @@ set(CGO_SOURCE
     aeron.cpp
     ${AERON_CLIENT_SOURCE})
 
-add_library(aeron_client_cgo STATIC ${CGO_SOURCE})
+add_library(aeron_client_cgo SHARED ${CGO_SOURCE})
 
 add_executable(aeron_test
     aeron_test.cpp
