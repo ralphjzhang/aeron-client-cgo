@@ -84,9 +84,9 @@ int aeron_get_streamId(int publication_idx) {
 
 int64_t aeron_publish(int publication_idx, char* msg, int msg_len) {
 #if defined(_MSC_VER)
-	__declspec(align(16)) std::array<uint8_t, 256> buffer;
+	__declspec(align(16)) std::array<uint8_t, 1024> buffer;
 #else
-	std::array<uint8_t, 256> buffer __attribute__((aligned(16)));
+	std::array<uint8_t, 1024> buffer __attribute__((aligned(16)));
 #endif
     concurrent::AtomicBuffer srcBuffer(&buffer[0], msg_len);
     srcBuffer.putBytes(0, reinterpret_cast<uint8_t*>(msg), msg_len);
