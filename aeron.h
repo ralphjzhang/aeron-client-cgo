@@ -7,6 +7,8 @@ extern "C" {
 
 #if defined(_MSC_VER)
 	#define AERON_CLIENT_CGO_EXPORT __declspec(dllexport)
+#else
+	#define AERON_CLIENT_CGO_EXPORT 
 #endif 
 
 typedef int (*poll_handler_t)(char*, int);

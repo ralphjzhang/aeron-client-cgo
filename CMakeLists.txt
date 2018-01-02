@@ -24,12 +24,14 @@ set(CGO_SOURCE
     ${AERON_CLIENT_SOURCE})
 	
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
-IF (CMAKE_SYSTEM_NAME MATCHES "Windows")
-	add_library(aeron_client_cgo SHARED ${CGO_SOURCE})
-ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	add_library(aeron_client_cgo STATIC ${CGO_SOURCE})
-ENDIF (STATUS "unsupport system.")
+ENDIF ()
 	
+IF (CMAKE_SYSTEM_NAME MATCHES "Windows") 
+	add_library(aeron_client_cgo SHARED ${CGO_SOURCE})
+ENDIF ()
+
 add_executable(aeron_test
     aeron_test.cpp
     #sub.cpp
