@@ -22,9 +22,14 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/aeron-client)
 set(CGO_SOURCE
     aeron.cpp
     ${AERON_CLIENT_SOURCE})
-
-add_library(aeron_client_cgo SHARED ${CGO_SOURCE})
-
+	
+MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
+IF (CMAKE_SYSTEM_NAME MATCHES "Windows")
+	add_library(aeron_client_cgo SHARED ${CGO_SOURCE})
+ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+	add_library(aeron_client_cgo STATIC ${CGO_SOURCE})
+ENDIF (STATUS "unsupport system.")
+	
 add_executable(aeron_test
     aeron_test.cpp
     #sub.cpp
