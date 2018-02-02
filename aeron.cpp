@@ -9,12 +9,12 @@ using namespace aeron::util;
 using namespace aeron;
 
 // to simplify, we use a fixed size array for publications, and let client use index
-// since publication is potentially expensive, 64 publication should be enough
+// since publication is potentially expensive, 256 publication should be enough
 aeron::Context context;
 std::shared_ptr<Aeron> g_aeron;
 
 std::mutex g_publications_lock;
-std::array<std::shared_ptr<Publication>, 64> g_publications;
+std::array<std::shared_ptr<Publication>, 256> g_publications;
 
 std::mutex g_subscriptions_lock;
 std::array<std::shared_ptr<Subscription>, 8> g_subscriptions;
@@ -76,6 +76,10 @@ int aeron_add_publication(char *channel, int stream_id) {
 
 void aeron_remove_publication(int publication_idx) {
     g_publications[publication_idx].reset();
+}
+
+int aeron_publication_is_connected(int publication_idx) {
+    return g_publications[publication_idx]->isConnected();
 }
 
 int aeron_get_streamId(int publication_idx) {

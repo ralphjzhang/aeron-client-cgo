@@ -19,6 +19,7 @@ int main(int argc, char **argv) {
     std::cout << "inited" << std::endl;
     if (argv[1] == std::string("pub")) {
         auto pub_idx = aeron_add_publication(argv[2], atoi(argv[3]));
+        std::cout << "isConnected: " << aeron_publication_is_connected(pub_idx) << std::endl;
         for (int i = 0; i < 100000; ++i) {
             char buf[32];
             sprintf(buf, "pub: %d", i);
