@@ -75,6 +75,7 @@ int aeron_add_publication(char *channel, int stream_id) {
 }
 
 void aeron_remove_publication(int publication_idx) {
+    g_publications[publication_idx]->close();
     g_publications[publication_idx].reset();
 }
 
