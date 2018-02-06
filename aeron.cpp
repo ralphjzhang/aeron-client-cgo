@@ -83,6 +83,10 @@ int aeron_publication_is_connected(int publication_idx) {
     return g_publications[publication_idx]->isConnected();
 }
 
+int aeron_publication_is_closed(int publication_idx) {
+    return g_publications[publication_idx]->isClosed();
+}
+
 int aeron_get_streamId(int publication_idx) {
     return g_publications[publication_idx]->streamId();
 }
