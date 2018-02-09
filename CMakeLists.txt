@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.0 FATAL_ERROR)
 cmake_policy(VERSION 2.8.0)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -Wall -std=c++11 -fexceptions -g -m64")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -Wall -fPIC -std=c++11 -fexceptions -g -m64")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast -Wall -std=c11 -g -m64")
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DDISABLE_BOUNDS_CHECKS")
