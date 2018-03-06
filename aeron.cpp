@@ -125,24 +125,30 @@ int aeron_add_subscription(char *channel, int stream_id) {
     return -1;
 }
 
-int aeron_poll(int subscription_idx, poll_handler_t handler) {
+int aeron_poll(int subscription_idx, poll_handler_t handler, int sleep_mill) {
     auto sub = g_subscriptions[subscription_idx];
     if (!sub) return -1;
 
-    g_sub_threads[subscription_idx] = std::thread([sub, handler]() {
+    g_sub_threads[subscription_idx] = std::thread([sleep_mill,sub, handler]() {
         auto frag_handler = [handler](const AtomicBuffer& buffer, util::index_t offset, util::index_t length, const Header& header) {
             //std::cout << "Message to stream " << header.streamId() << " from session " << header.sessionId();
             //std::cout << std::string(reinterpret_cast<const char*>(buffer.buffer()) + offset, static_cast<std::size_t>(length)) << std::endl;
             handler((char*)(buffer.buffer() + offset), length);
         };
 
-        // SleepingIdleStrategy idle(std::chrono::milliseconds(1));
-        concurrent::BusySpinIdleStrategy idle;
-        while (true)
-        {
-            const int fragments_read = sub->poll(frag_handler, 10);
-            idle.idle(fragments_read);
-        }
+       	if (sleep_mill == 0)  {
+            concurrent::BusySpinIdleStrategy idle;
+	    while (true) {
+            	const int fragments_read = sub->poll(frag_handler, 10);
+            	idle.idle(fragments_read);
+            }
+	} else {
+            SleepingIdleStrategy idle(std::chrono::milliseconds(1)*sleep_mill);
+	    while (true) {
+            	const int fragments_read = sub->poll(frag_handler, 10);
+            	idle.idle(fragments_read);
+            }
+	}
     });
     return 0;
 }
