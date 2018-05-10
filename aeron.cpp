@@ -91,6 +91,10 @@ int aeron_get_streamId(int publication_idx) {
     return g_publications[publication_idx]->streamId();
 }
 
+int aeron_get_sessionId(int publication_idx) {
+    return g_publications[publication_idx]->sessionId();
+}
+
 int64_t aeron_publish(int publication_idx, char* msg, int msg_len) {
 #if defined(_MSC_VER)
 	__declspec(align(16)) std::array<uint8_t, 1024> buffer;
